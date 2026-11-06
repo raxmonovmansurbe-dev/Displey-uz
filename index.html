@@ -787,16 +787,20 @@
       };
 
       try {
-        const response = await fetch("/api/order", {
+        const targetUrl = window.location.origin + "/api/order";
+        const response = await fetch(targetUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
           body: JSON.stringify(orderPayload)
         });
 
         const result = await response.json();
 
-        if (result.status === "ok") {
-          alert("✅ Buyurtmangiz qabul qilindi!");
+        if (result && result.status === "ok") {
+          alert("✅ Buyurtmangiz muvaffaqiyatli qabul qilindi!");
           cart = [];
           updateCartUI();
           closeCartModal();
@@ -804,7 +808,7 @@
             tgApp.close();
           }
         } else {
-          alert("Xatolik: " + (result.message || "Buyurtma yuborilmadi"));
+          alert("Xatolik: " + ((result && result.message) || "Buyurtma saqlanmadi"));
           if (btn) {
             btn.disabled = false;
             btn.textContent = "✅ Buyurtmani tasdiqlash";
