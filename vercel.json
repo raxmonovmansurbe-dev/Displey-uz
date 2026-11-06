@@ -1,13 +1,7 @@
 {
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/ulash", "destination": "/api/index?ulash=1" },
     { "source": "/admin", "destination": "/admin.html" }
-  ],
-  "headers": [
-    { "source": "/admin(.*)", "headers": [
-      { "key": "X-Robots-Tag", "value": "noindex" },
-      { "key": "Referrer-Policy", "value": "no-referrer" },
-      { "key": "Cache-Control", "value": "no-store" }
-    ] }
   ]
 }
