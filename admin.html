@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Displey-uzz — admin panel</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --mat: #1E3A8A; --mat-deep: #0F172A; --mat-line: rgba(147,197,253,.09);
+      --kapton: #38BDF8; --kapton-deep: #0284C7;
+      --paper: #F0F4FA; --card: #FFFFFF; --ink: #0F172A; --muted: #64748B; --hair: #E2E8F0;
+      --danger: #B4412B;
+      --s-yangi: #2F6FB0; --s-chek: #C97F12; --s-tasdiqlandi: #0F6B5A; --s-yuborildi: #6B4FB0; --s-yetkazildi: #3D7A3A; --s-bekor: #B4412B;
+      --display: "Unbounded", "Onest", system-ui, sans-serif;
+      --body: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { background: var(--paper); }
+    body { font-family: var(--body); color: var(--ink); font-size: 15px; line-height: 1.4; font-variant-numeric: tabular-nums;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--kapton); outline-offset: 2px; }
+    [hidden] { display: none !important; }
+    .wrap { max-width: 980px; margin: 0 auto; }
+
+    /* ---------- Yuqori qism: kunlik savdo chizg'ichi ---------- */
+    .top {
+      color: #EAF6F2;
+      background:
+        linear-gradient(var(--mat-line) 1px, transparent 1px) 0 0 / 22px 22px,
+        linear-gradient(90deg, var(--mat-line) 1px, transparent 1px) 0 0 / 22px 22px,
+        radial-gradient(120% 100% at 90% 0%, #2563EB, var(--mat) 55%, var(--mat-deep));
+      padding: calc(16px + env(safe-area-inset-top, 0px)) 18px 18px;
+    }
+    .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .brand { font-family: var(--display); font-weight: 800; font-size: 17px; letter-spacing: -.02em; }
+    .brand em { font-style: normal; color: var(--kapton); }
+    .refresh { border: 1px solid rgba(207,229,223,.3); background: transparent; color: #CFE5DF; height: 34px; padding: 0 12px; border-radius: 10px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .refresh svg { transition: transform .5s; }
+    .refresh.spin svg { transform: rotate(360deg); }
+    .today { margin-top: 18px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .today small { display: block; font-size: 13px; color: #A9CFC6; margin-bottom: 4px; }
+    .today strong { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 8vw, 38px); letter-spacing: -.03em; line-height: 1; }
+    .today .side { font-size: 13px; color: #CFE5DF; }
+    .today .side b { color: #fff; font-weight: 600; }
+    .ruler { margin-top: 16px; position: relative; height: 96px; display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; align-items: end; padding-bottom: 18px;
+      background: repeating-linear-gradient(90deg, rgba(207,229,223,.5) 0 1px, transparent 1px calc(100% / 14)) bottom / 100% 8px no-repeat; }
+    .ruler .col { position: relative; height: 100%; display: flex; align-items: flex-end; }
+    .ruler .col i { display: block; width: 100%; min-height: 2px; border-radius: 3px 3px 0 0;
+      background: linear-gradient(180deg, rgba(255,255,255,.35), transparent 40%), linear-gradient(0deg, var(--kapton-deep), var(--kapton)); opacity: .9; transform-origin: bottom; animation: grow .6s cubic-bezier(.2,.9,.3,1) both; }
+    .ruler .col.today-col i { box-shadow: 0 0 0 1.5px #fff; }
+    .ruler .col span { position: absolute; bottom: -18px; left: 0; right: 0; text-align: center; font-size: 10px; color: #A9CFC6; }
+    @keyframes grow { from { transform: scaleY(0); } }
+
+    /* ---------- Tablar ---------- */
+    .tabs { position: sticky; top: 0; z-index: 20; background: rgba(243,245,242,.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--hair); }
+    .tabs .wrap { display: flex; gap: 4px; padding: 8px 12px; }
+    .tab { flex: 1; border: 0; background: transparent; height: 40px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--muted); }
+    .tab[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 0 var(--hair), 0 4px 12px -8px rgba(0,0,0,.25); }
+    .tab i { font-style: normal; font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 4px; }
+
+    main { padding: 12px; }
+    .tools { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .search { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; background: var(--card); border: 1.5px solid var(--hair); border-radius: 12px; }
+    .search:focus-within { border-color: var(--mat); }
+    .search input { flex: 1; border: 0; outline: 0; background: transparent; font-size: 16px; min-width: 0; }
+    .chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: none; border: 1px solid var(--hair); background: var(--card); height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .chip i { font-style: normal; color: var(--muted); font-size: 11.5px; }
+    .chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .chip[aria-pressed="true"] i { color: #C9D3D0; }
+
+    /* ---------- Buyurtma qatorlari ---------- */
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .order { background: var(--card); border: 1px solid var(--hair); border-radius: 14px; overflow: hidden; border-left: 4px solid var(--sc, var(--hair)); }
+    .o-head { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 12px 14px; width: 100%; text-align: left; border: 0; background: transparent; }
+    .o-id { font-family: var(--display); font-weight: 600; font-size: 13px; }
+    .o-time { font-size: 12px; color: var(--muted); }
+    .o-who { font-weight: 600; font-size: 15px; grid-column: 1; }
+    .o-sum { font-family: var(--display); font-weight: 600; font-size: 15px; text-align: right; white-space: nowrap; }
+    .o-meta { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+    .pill { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11.5px; font-weight: 600; color: #fff; background: var(--sc, var(--muted)); }
+    .warn { color: var(--danger); font-weight: 600; }
+    .o-body { border-top: 1px dashed var(--hair); padding: 12px 14px 14px; display: grid; gap: 14px; }
+    .contacts { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { border: 1px solid var(--hair); background: var(--paper); height: 38px; padding: 0 12px; border-radius: 10px; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn.primary { background: var(--mat); border-color: var(--mat); color: #fff; }
+    .btn:disabled { opacity: .5; }
+    .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13.5px; }
+    .kv dt { color: var(--muted); }
+    .items { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .items td { padding: 6px 0; border-bottom: 1px solid var(--paper); vertical-align: top; }
+    .items td:nth-child(2), .items td:nth-child(3) { text-align: right; white-space: nowrap; padding-left: 10px; }
+    .items .short { color: var(--danger); font-size: 12px; }
+    .items tfoot td { font-weight: 700; border: 0; padding-top: 8px; }
+    .label { font-size: 12.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; display: block; }
+    .status-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    select { height: 40px; border: 1.5px solid var(--hair); border-radius: 10px; background: #fff; padding: 0 10px; font-weight: 600; min-width: 170px; }
+    .check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+    textarea { width: 100%; border: 1.5px solid var(--hair); border-radius: 10px; padding: 10px 12px; resize: vertical; min-height: 64px; background: var(--paper); font-size: 15px; }
+    textarea:focus { outline: 0; border-color: var(--mat); background: #fff; }
+    .timeline { list-style: none; display: grid; gap: 6px; font-size: 12.5px; }
+    .timeline li { display: grid; grid-template-columns: 12px 1fr; gap: 8px; align-items: start; }
+    .timeline li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--sc, var(--muted)); margin-top: 5px; }
+    .timeline time { color: var(--muted); }
+
+    /* ---------- Mijozlar ---------- */
+    .cust { background: var(--card); border: 1px solid var(--hair); border-radius: 14px; padding: 12px 14px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
+    .cust .nm { font-weight: 600; }
+    .cust .sum { font-family: var(--display); font-weight: 600; font-size: 14px; text-align: right; white-space: nowrap; }
+    .cust .sub { font-size: 12.5px; color: var(--muted); }
+    .cust .contacts { grid-column: 1 / -1; margin-top: 6px; }
+    .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 5px; background: var(--paper); margin-left: 6px; vertical-align: 1px; }
+    .tag.optom { background: #FDF0DA; color: #8A5608; }
+
+    /* ---------- Hisobot ---------- */
+    .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+    .kpi { background: var(--card); border: 1px solid var(--hair); border-radius: 12px; padding: 12px 14px; }
+    .kpi small { display: block; font-size: 12.5px; color: var(--muted); }
+    .kpi strong { font-family: var(--display); font-weight: 600; font-size: 19px; letter-spacing: -.02em; }
+    .panel { background: var(--card); border: 1px solid var(--hair); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+    .panel h3 { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+    .top-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 7px 0; border-bottom: 1px solid var(--paper); font-size: 13.5px; }
+    .top-row:last-child { border: 0; }
+    .top-row .meter { grid-column: 1 / -1; height: 4px; border-radius: 4px; background: var(--paper); overflow: hidden; }
+    .top-row .meter i { display: block; height: 100%; background: var(--mat); }
+    .split { display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin: 6px 0 8px; background: var(--paper); }
+    .split i:first-child { background: var(--kapton); } .split i:last-child { background: var(--mat); }
+    .legend { display: flex; justify-content: space-between; font-size: 13px; }
+    .exports { display: flex; gap: 8px; flex-wrap: wrap; }
+
+
+    /* ---------- Tovarlar ---------- */
+    .prod { background: var(--card); border: 1px solid var(--hair); border-radius: 12px; padding: 10px 12px; border-left: 4px solid transparent; }
+    .prod.dirty { border-left-color: var(--kapton); background: #FFFBF3; }
+    .prod.hidden-p { opacity: .6; }
+    .p-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .p-meta { font-size: 12px; color: var(--muted); }
+    .p-name { font-weight: 600; font-size: 14px; line-height: 1.3; margin-top: 2px; word-break: break-word; }
+    .p-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .p-fields label { font-size: 11.5px; color: var(--muted); font-weight: 600; display: block; margin-bottom: 3px; }
+    .p-fields input { width: 100%; height: 40px; border: 1.5px solid var(--hair); border-radius: 9px; padding: 0 8px; font-size: 15px; font-weight: 600; background: #fff; font-variant-numeric: tabular-nums; }
+    .p-fields input:focus { outline: 0; border-color: var(--mat); }
+    .p-fields input.bad { border-color: var(--danger); }
+    .qty { display: flex; height: 40px; border: 1.5px solid var(--hair); border-radius: 9px; overflow: hidden; background: #fff; }
+    .qty button { width: 32px; border: 0; background: var(--paper); font-size: 18px; font-weight: 600; }
+    .qty input { border: 0 !important; border-radius: 0 !important; text-align: center; padding: 0 2px !important; min-width: 0; }
+    .stock-0 .qty { border-color: var(--danger); }
+    .stock-low .qty { border-color: var(--kapton); }
+    .eye { border: 1px solid var(--hair); background: var(--paper); border-radius: 9px; height: 32px; padding: 0 10px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+    .savebar { position: fixed; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 40; max-width: 760px; margin: 0 auto;
+      background: var(--mat-deep); color: #fff; border-radius: 16px; padding: 10px 10px 10px 16px; display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 16px 36px -14px rgba(12,46,41,.7); }
+    .savebar span { flex: 1; font-size: 14px; }
+    .savebar .btn { height: 42px; color: var(--ink); }
+    .savebar .save { background: var(--kapton); border-color: var(--kapton); color: #2B1A00; }
+    .bulk { background: var(--card); border: 1px solid var(--hair); border-radius: 12px; padding: 12px; display: grid; gap: 10px; margin-bottom: 12px; }
+    .bulk .row2 { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .bulk input, .bulk select { height: 40px; border: 1.5px solid var(--hair); border-radius: 9px; padding: 0 10px; background: #fff; font-size: 15px; }
+    .bulk input { width: 110px; }
+    .newform { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .newform .full { grid-column: 1 / -1; }
+    .newform input, .newform select { width: 100%; }
+    .more { width: 100%; margin-top: 8px; }
+    .hint { font-size: 12.5px; color: var(--muted); }
+
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty strong { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+    .notice { background: #FDF0DA; color: #6B4306; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; margin-bottom: 12px; }
+    .gate { min-height: 100vh; display: grid; place-content: center; text-align: center; padding: 24px; gap: 10px; }
+    .gate h1 { font-family: var(--display); font-size: 22px; }
+    .gate p { color: var(--muted); max-width: 32ch; margin: 0 auto; }
+    .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 50; transform: translate(-50%, 160%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 13.5px; transition: transform .3s cubic-bezier(.2,.9,.3,1.2); width: max-content; max-width: 90vw; }
+    .toast.show { transform: translate(-50%, 0); }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
+    @media (min-width: 720px) {
+      .kpis { grid-template-columns: repeat(4, 1fr); }
+      .tools { flex-direction: row; align-items: center; }
+      .tools .search { flex: 0 0 320px; }
+      .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="gate" id="gate" hidden>
+    <h1>Kirish kerak</h1>
+    <p id="gateMsg">Botga <b>/panel</b> deb yozing va kelgan tugma yoki havola orqali kiring.</p>
+  </div>
+
+  <div id="app" hidden>
+    <header class="top">
+      <div class="wrap">
+        <div class="bar">
+          <div class="brand">Displey<em>-uzz</em> panel</div>
+          <button class="refresh" id="refresh" type="button" aria-label="Yangilash">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+            <span id="updated">Yangilash</span>
+          </button>
+        </div>
+        <div class="today">
+          <div><small>Bugungi savdo</small><strong id="todaySum">0 soʻm</strong></div>
+          <div class="side"><b id="todayCount">0</b> ta buyurtma bugun<br><b id="openCount">0</b> tasi ishlov kutmoqda</div>
+        </div>
+        <div class="ruler" id="ruler" aria-label="Oxirgi 14 kunlik savdo"></div>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <div class="wrap">
+        <button class="tab" role="tab" data-tab="orders" aria-selected="true">Buyurtmalar<i id="tOrders"></i></button>
+        <button class="tab" role="tab" data-tab="customers" aria-selected="false">Mijozlar<i id="tCust"></i></button>
+        <button class="tab" role="tab" data-tab="products" aria-selected="false">Tovarlar<i id="tProd"></i></button>
+        <button class="tab" role="tab" data-tab="report" aria-selected="false">Hisobot</button>
+      </div>
+    </nav>
+
+    <main class="wrap">
+      <div class="notice" id="persistNote" hidden>Doimiy baza ulanmagan: maʼlumotlar vaqtincha saqlanmoqda.</div>
+
+      <section id="ordersView">
+        <div class="tools">
+          <label class="search"><input id="oq" type="search" placeholder="ID, ism, raqam yoki model" aria-label="Buyurtma qidirish"></label>
+          <div class="chips" id="statusChips"></div>
+        </div>
+        <div class="list" id="orders"></div>
+      </section>
+
+      <section id="customersView" hidden>
+        <div class="tools">
+          <label class="search"><input id="cq" type="search" placeholder="Ism, raqam yoki @username" aria-label="Mijoz qidirish"></label>
+          <div class="chips" id="custSort">
+            <button class="chip" type="button" data-sort="sum" aria-pressed="true">Koʻp xarid qilgan</button>
+            <button class="chip" type="button" data-sort="last" aria-pressed="false">Yaqinda buyurtma bergan</button>
+            <button class="chip" type="button" data-sort="none" aria-pressed="false">Hali buyurtma bermagan</button>
+          </div>
+        </div>
+        <div class="list" id="customers"></div>
+      </section>
+
+
+      <section id="productsView" hidden>
+        <div class="tools">
+          <label class="search"><input id="pq" type="search" placeholder="Model nomi yoki ID" aria-label="Tovar qidirish"></label>
+          <div class="chips" id="pFilter">
+            <button class="chip" type="button" data-pf="all" aria-pressed="true">Hammasi<i id="pfAll"></i></button>
+            <button class="chip" type="button" data-pf="low" aria-pressed="false"><span class="dot" style="background:var(--kapton)"></span>Kam qolgan<i id="pfLow"></i></button>
+            <button class="chip" type="button" data-pf="out" aria-pressed="false"><span class="dot" style="background:var(--danger)"></span>Tugagan<i id="pfOut"></i></button>
+            <button class="chip" type="button" data-pf="hidden" aria-pressed="false">Yashirilgan<i id="pfHid"></i></button>
+            <button class="chip" type="button" data-pf="dirty" aria-pressed="false">Oʻzgartirilgan<i id="pfDirty"></i></button>
+          </div>
+          <div class="chips" id="pBrands"></div>
+        </div>
+        <div class="chips" style="margin-bottom:12px">
+          <button class="chip" type="button" id="openBulk">± Narxlarni foizda oʻzgartirish</button>
+          <button class="chip" type="button" id="openNew">+ Yangi model</button>
+        </div>
+        <div class="bulk" id="bulkBox" hidden>
+          <div class="hint">Hozir roʻyxatda koʻrinib turgan <b id="bulkCount">0</b> ta modelga qoʻllanadi. Saqlashdan oldin tekshirib chiqasiz.</div>
+          <div class="row2">
+            <input id="bulkPct" type="number" inputmode="decimal" placeholder="masalan 5 yoki -3" aria-label="Foiz">
+            <select id="bulkWhich" aria-label="Qaysi narx" hidden><option value="retail" selected>Faqat dona narx</option></select>
+            <button class="btn primary" type="button" id="bulkApply">Qoʻllash</button>
+          </div>
+          <div class="hint">Narxlar 1000 soʻmgacha yaxlitlanadi.</div>
+        </div>
+        <div class="bulk" id="newBox" hidden>
+          <div class="newform">
+            <input id="nBrand" list="brandList" placeholder="Brend (Samsung, Redmi…)" aria-label="Brend">
+            <input id="nType" list="typeList" placeholder="Turi (IPS LCD, OLED…)" aria-label="Turi">
+            <input class="full" id="nName" placeholder="Model nomi, masalan A15 / M15" aria-label="Model nomi">
+            <input class="full" id="nRetail" type="number" inputmode="numeric" placeholder="Dona narxi (so'm)" aria-label="Dona narxi">
+            <input id="nWhole" type="number" inputmode="numeric" placeholder="Optom narx" aria-label="Optom narx" hidden>
+            <input id="nStock" type="number" inputmode="numeric" placeholder="Qoldiq (dona)" aria-label="Qoldiq">
+            <button class="btn primary" type="button" id="nAdd">Modelni qoʻshish</button>
+          </div>
+          <datalist id="brandList"></datalist><datalist id="typeList"></datalist>
+        </div>
+        <div class="list" id="products"></div>
+        <button class="btn more" type="button" id="pMore" hidden>Yana koʻrsatish</button>
+        <div style="height:80px"></div>
+      </section>
+      <section id="reportView" hidden>
+        <div class="tools"><div class="chips" id="periods">
+          <button class="chip" type="button" data-days="7" aria-pressed="false">7 kun</button>
+          <button class="chip" type="button" data-days="30" aria-pressed="true">30 kun</button>
+          <button class="chip" type="button" data-days="90" aria-pressed="false">90 kun</button>
+          <button class="chip" type="button" data-days="0" aria-pressed="false">Hammasi</button>
+        </div></div>
+        <div class="kpis">
+          <div class="kpi"><small>Savdo</small><strong id="kSum">0</strong></div>
+          <div class="kpi"><small>Buyurtmalar</small><strong id="kCount">0</strong></div>
+          <div class="kpi"><small>Oʻrtacha chek</small><strong id="kAvg">0</strong></div>
+          <div class="kpi"><small>Sotilgan ekran</small><strong id="kQty">0</strong></div>
+        </div>
+        <div class="report-grid">
+          <div class="panel"><h3>Eng koʻp sotilgan modellar</h3><div id="topModels"></div></div>
+          <div>
+            
+            <div class="panel"><h3>Eng yaxshi mijozlar</h3><div id="topCust"></div></div>
+            <div class="panel"><h3>Excelga yuklab olish</h3><div class="exports">
+              <button class="btn" type="button" id="expOrders">Buyurtmalar (.csv)</button>
+              <button class="btn" type="button" id="expCust">Mijozlar (.csv)</button>
+            </div></div>
+          </div>
+        </div>
+        <p style="font-size:12.5px;color:var(--muted);margin-top:4px">Bekor qilingan buyurtmalar hisobga olinmaydi.</p>
+      </section>
+    </main>
+  </div>
+  <div class="savebar" id="saveBar" hidden><span id="saveTxt">0 ta oʻzgarish</span>
+    <button class="btn" type="button" id="discard">Bekor</button><button class="btn save" type="button" id="saveAll">Saqlash</button></div>
+  <div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor('#0F172A'); tg.setBackgroundColor('#F0F4FA'); } catch (e) {} }
+  const $ = (id) => document.getElementById(id);
+  const API = '/api/index';
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmtN = (n) => Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u2009');
+  const fmt = (n) => fmtN(n) + ' soʻm';
+  const short = (n) => n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.', ',') + ' mln' : n >= 1e3 ? Math.round(n / 1e3) + ' ming' : fmtN(n);
+  const DAY = 86400000;
+  const dayKey = (t) => { const d = new Date(t); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); };
+  const startOfDay = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const when = (t) => {
+    if (!t) return '';
+    const d = new Date(t), now = Date.now(), hm = d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+    if (t >= startOfDay(now)) return 'bugun ' + hm;
+    if (t >= startOfDay(now) - DAY) return 'kecha ' + hm;
+    return d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' }) + ' ' + hm;
+  };
+  const toastEl = $('toast'); let tt;
+  const toast = (m) => { toastEl.textContent = m; toastEl.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => toastEl.classList.remove('show'), 2400); };
+
+  /* ---- kirish tokeni ---- */
+  const url = new URL(location.href);
+  let token = url.searchParams.get('k');
+  try {
+    if (token) { localStorage.setItem('ekr_admin_token', token); url.searchParams.delete('k'); history.replaceState(null, '', url.pathname + url.search); }
+    else token = localStorage.getItem('ekr_admin_token');
+  } catch (e) {}
+  if (!token) { $('gate').hidden = false; return; }
+
+  const STATUS_ORDER = ['yangi', 'chek', 'tasdiqlandi', 'yuborildi', 'yetkazildi', 'bekor'];
+  const OPEN = new Set(['yangi', 'chek', 'tasdiqlandi']);
+  let STATUSES = { yangi: 'Yangi', chek: 'Rasm keldi', tasdiqlandi: 'Tasdiqlandi', yuborildi: 'Yuborildi', yetkazildi: 'Yetkazildi', bekor: 'Bekor qilindi' };
+  const sc = (s) => `var(--s-${STATUS_ORDER.includes(s) ? s : 'yangi'})`;
+
+  let orders = [], customers = [], custById = new Map();
+  let statusFilter = 'ochiq', oq = '', cq = '', custSort = 'sum', periodDays = 30;
+  const open = new Set();
+  const live = (o) => o.status !== 'bekor';
+  const orderSum = (o) => (o.items && o.items.length) ? o.items.reduce((s, it) => s + (it.aq ?? it.oq) * (it.p || 0), 0) : (o.total || 0);
+  const orderQty = (o) => (o.items && o.items.length) ? o.items.reduce((s, it) => s + (it.aq ?? it.oq), 0) : (o.qty || 0);
+
+  async function api(action, body) {
+    const r = await fetch(`${API}?admin=${action}`, {
+      method: body ? 'POST' : 'GET',
+      headers: { 'X-Admin-Token': token, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 401) { try { localStorage.removeItem('ekr_admin_token'); } catch (e) {} $('app').hidden = true; $('gate').hidden = false; $('gateMsg').textContent = j.error || 'Kirish muddati tugagan.'; throw new Error('auth'); }
+    if (!r.ok) throw new Error(j.error || 'Server xatosi');
+    return j;
+  }
+
+  async function load(silent) {
+    const btn = $('refresh'); btn.classList.add('spin');
+    try {
+      const d = await api('data');
+      $('gate').hidden = true; orders = d.orders || []; STATUSES = d.statuses || STATUSES;
+      customers = d.customers || []; custById = new Map(customers.map(c => [String(c.cid), c]));
+      $('persistNote').hidden = !!d.persistent;
+      $('app').hidden = false;
+      renderAll();
+      $('updated').textContent = new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      if (e.message === 'auth') return;
+      if ($('app').hidden) { $('gate').hidden = false; $('gateMsg').innerHTML = 'Maʼlumotni yuklab boʻlmadi. Internetni tekshirib, <a href="#" onclick="location.reload();return false"><b>qayta urinib koʻring</b></a>.'; }
+      else if (!silent) toast('Yuklab boʻlmadi: ' + e.message);
+    }
+    setTimeout(() => btn.classList.remove('spin'), 500);
+  }
+
+  function renderAll() { renderTop(); renderChips(); renderOrders(); renderCustomers(); renderReport(); }
+
+  /* ---- yuqori: bugun + 14 kunlik chizg'ich ---- */
+  function renderTop() {
+    const now = Date.now(), t0 = startOfDay(now);
+    const today = orders.filter(o => live(o) && o.created >= t0);
+    $('todaySum').textContent = fmt(today.reduce((s, o) => s + orderSum(o), 0));
+    $('todayCount').textContent = today.length;
+    $('openCount').textContent = orders.filter(o => OPEN.has(o.status)).length;
+    const days = [];
+    for (let i = 13; i >= 0; i--) days.push(t0 - i * DAY);
+    const sums = days.map(d => orders.filter(o => live(o) && o.created >= d && o.created < d + DAY).reduce((s, o) => s + orderSum(o), 0));
+    const max = Math.max(1, ...sums);
+    $('ruler').innerHTML = days.map((d, i) => `<div class="col${i === 13 ? ' today-col' : ''}" title="${new Date(d).toLocaleDateString('uz-UZ')}: ${fmt(sums[i])}">
+      <i style="height:${Math.max(2, sums[i] / max * 100)}%;animation-delay:${i * 30}ms"></i><span>${new Date(d).getDate()}</span></div>`).join('');
+  }
+
+  /* ---- holat filtrlari ---- */
+  function renderChips() {
+    const counts = {}; orders.forEach(o => counts[o.status] = (counts[o.status] || 0) + 1);
+    const openN = orders.filter(o => OPEN.has(o.status)).length;
+    const opts = [['ochiq', 'Ishlov kutmoqda', openN, 'var(--kapton)'], ['hammasi', 'Hammasi', orders.length, 'var(--ink)'],
+      ...STATUS_ORDER.map(s => [s, STATUSES[s], counts[s] || 0, sc(s)])];
+    $('statusChips').innerHTML = opts.map(([k, l, n, c]) =>
+      `<button class="chip" type="button" data-status="${k}" aria-pressed="${k === statusFilter}"><span class="dot" style="background:${c}"></span>${esc(l)}<i>${n}</i></button>`).join('');
+    $('tOrders').textContent = openN || '';
+    $('tCust').textContent = customers.length || '';
+  }
+  $('statusChips').addEventListener('click', e => { const b = e.target.closest('[data-status]'); if (!b) return; statusFilter = b.dataset.status; renderChips(); renderOrders(); });
+
+  /* ---- buyurtmalar ---- */
+  const nm = (o) => o.tg_name || o.name || 'Mijoz';
+  const phoneOf = (o) => o.phone || (custById.get(String(o.cid)) || {}).phone || '';
+  function contactsHTML(cid, phone, username) {
+    return `<div class="contacts">
+      ${phone ? `<a class="btn primary" href="tel:${esc(phone)}">📞 ${esc(phone)}</a>` : `<span class="warn" style="align-self:center;font-size:13px">Raqam yoʻq</span>`}
+      <a class="btn" href="${username ? 'https://t.me/' + encodeURIComponent(username) : 'tg://user?id=' + encodeURIComponent(cid)}">💬 Telegram</a>
+    </div>`;
+  }
+  function renderOrders() {
+    const q = oq.trim().toLowerCase().replace(/\s+/g, '');
+    const list = orders.filter(o => {
+      if (statusFilter === 'ochiq' && !OPEN.has(o.status)) return false;
+      if (!['ochiq', 'hammasi'].includes(statusFilter) && o.status !== statusFilter) return false;
+      if (!q) return true;
+      const hay = [o.id, o.name, o.tg_name, o.username, phoneOf(o), o.addr, ...(o.items || []).map(i => i.n)].join(' ').toLowerCase().replace(/\s+/g, '');
+      return hay.includes(q);
+    });
+    const box = $('orders');
+    if (!list.length) {
+      box.innerHTML = orders.length
+        ? `<div class="empty"><strong>Bu filtrda buyurtma yoʻq</strong>Boshqa holatni tanlang yoki qidiruvni tozalang.</div>`
+        : `<div class="empty"><strong>Hali buyurtma yoʻq</strong>Mijozlar doʻkondan buyurtma berganda shu yerda paydo boʻladi.</div>`;
+      return;
+    }
+    box.innerHTML = list.map(orderHTML).join('');
+  }
+  function orderHTML(o) {
+    const isOpen = open.has(o.id), sum = orderSum(o), qty = orderQty(o), phone = phoneOf(o);
+    const changed = (o.items || []).some(i => (i.aq ?? i.oq) < i.oq);
+    return `<article class="order" style="--sc:${sc(o.status)}" data-id="${esc(o.id)}">
+      <button class="o-head" type="button" data-toggle="${esc(o.id)}" aria-expanded="${isOpen}">
+        <span><span class="o-id">#${esc(o.id)}</span> <span class="o-time">${when(o.created)}</span></span>
+        <span class="o-sum">${fmt(sum)}</span>
+        <span class="o-who">${esc(nm(o))}${o.username ? ` <span class="o-time">@${esc(o.username)}</span>` : ''}</span>
+        <span></span>
+        <span class="o-meta"><span class="pill">${esc(STATUSES[o.status] || o.status)}</span>
+          <span>${qty} ta, ${esc(o.pt || '')}</span><span>${esc(o.deliv || '')}</span>
+          ${phone ? '' : '<span class="warn">raqam yoʻq</span>'}${changed ? '<span class="warn">tarkib oʻzgargan</span>' : ''}${o.note ? '<span>📝 izoh bor</span>' : ''}</span>
+      </button>
+      ${isOpen ? orderBody(o, phone) : ''}
+    </article>`;
+  }
+  function orderBody(o, phone) {
+    const rows = (o.items || []).map(i => {
+      const q = i.aq ?? i.oq;
+      return `<tr><td>${esc(i.n)}${q < i.oq ? `<div class="short">${i.oq} ta soʻralgan, ${q} ta bor</div>` : ''}</td><td>${q} ta</td><td>${fmtN(q * i.p)}</td></tr>`;
+    }).join('');
+    const hist = (o.history || []).slice().reverse().map(h => `<li style="--sc:${sc(h.s)}"><div><b>${esc(STATUSES[h.s] || h.s)}</b>${h.note ? ', ' + esc(h.note) : ''}<br><time>${when(h.t)}${h.by ? ', ' + esc(h.by) : ''}</time></div></li>`).join('');
+    return `<div class="o-body">
+      ${contactsHTML(o.cid, phone, o.username)}
+      <dl class="kv"><dt>Formadagi ism</dt><dd>${esc(o.name)}</dd><dt>Yetkazish</dt><dd>${esc(o.deliv)}</dd><dt>Manzil</dt><dd>${esc(o.addr)}</dd><dt>Narx turi</dt><dd>${esc(o.pt)}</dd></dl>
+      <table class="items"><tbody>${rows}</tbody><tfoot><tr><td>Jami</td><td>${orderQty(o)} ta</td><td>${fmtN(orderSum(o))}</td></tr></tfoot></table>
+      <div>
+        <span class="label">Holat</span>
+        <div class="status-row">
+          <select data-status-for="${esc(o.id)}" aria-label="Buyurtma holati">${STATUS_ORDER.map(s => `<option value="${s}"${s === o.status ? ' selected' : ''}>${esc(STATUSES[s])}</option>`).join('')}</select>
+          <label class="check"><input type="checkbox" data-notify-for="${esc(o.id)}" checked> Mijozga xabar</label>
+          <button class="btn primary" type="button" data-save-status="${esc(o.id)}">Holatni saqlash</button>
+        </div>
+      </div>
+      <div>
+        <label class="label" for="note-${esc(o.id)}">Izoh (faqat sizga koʻrinadi)</label>
+        <textarea id="note-${esc(o.id)}" data-note-for="${esc(o.id)}" maxlength="500" placeholder="Masalan: BTS yuk xati 123456, naqd toʻladi">${esc(o.note)}</textarea>
+        <button class="btn" type="button" data-save-note="${esc(o.id)}" style="margin-top:6px">Izohni saqlash</button>
+      </div>
+      ${hist ? `<div><span class="label">Tarix</span><ul class="timeline">${hist}</ul></div>` : ''}
+    </div>`;
+  }
+  function rerenderOrder(id) {
+    const o = orders.find(x => x.id === id); const el = document.querySelector(`.order[data-id="${CSS.escape(id)}"]`);
+    if (o && el) el.outerHTML = orderHTML(o);
+  }
+  $('orders').addEventListener('click', async (e) => {
+    const t = e.target.closest('[data-toggle]');
+    if (t) { const id = t.dataset.toggle; open.has(id) ? open.delete(id) : open.add(id); rerenderOrder(id); return; }
+    const s = e.target.closest('[data-save-status]');
+    if (s) {
+      const id = s.dataset.saveStatus, st = document.querySelector(`[data-status-for="${CSS.escape(id)}"]`).value;
+      const notify = document.querySelector(`[data-notify-for="${CSS.escape(id)}"]`).checked;
+      s.disabled = true;
+      try { const r = await api('update', { id, status: st, notify }); replaceOrder(r.order); toast(notify && ['tasdiqlandi','yuborildi','yetkazildi','bekor'].includes(st) ? 'Holat saqlandi, mijozga xabar ketdi' : 'Holat saqlandi'); }
+      catch (err) { if (err.message !== 'auth') toast(err.message); s.disabled = false; }
+      return;
+    }
+    const n = e.target.closest('[data-save-note]');
+    if (n) {
+      const id = n.dataset.saveNote, note = document.querySelector(`[data-note-for="${CSS.escape(id)}"]`).value;
+      n.disabled = true;
+      try { const r = await api('update', { id, note }); replaceOrder(r.order); toast('Izoh saqlandi'); }
+      catch (err) { if (err.message !== 'auth') toast(err.message); n.disabled = false; }
+    }
+  });
+  function replaceOrder(o) { const i = orders.findIndex(x => x.id === o.id); if (i >= 0) orders[i] = o; renderTop(); renderChips(); rerenderOrder(o.id); renderReport(); renderCustomers(); }
+  $('oq').addEventListener('input', e => { oq = e.target.value; renderOrders(); });
+
+  /* ---- mijozlar ---- */
+  function custStats() {
+    const m = new Map();
+    customers.forEach(c => m.set(String(c.cid), { ...c, cid: String(c.cid), n: 0, sum: 0, last: 0 }));
+    orders.forEach(o => {
+      const k = String(o.cid);
+      if (!m.has(k)) m.set(k, { cid: k, name: nm(o), username: o.username, phone: o.phone, n: 0, sum: 0, last: 0 });
+      const c = m.get(k);
+      c.username = c.username || o.username; c.name = c.name || nm(o); c.phone = c.phone || o.phone;
+      if (live(o)) { c.n++; c.sum += orderSum(o); }
+      c.last = Math.max(c.last, o.created || 0);
+    });
+    return [...m.values()];
+  }
+  function renderCustomers() {
+    const q = cq.trim().toLowerCase().replace(/[\s@+]/g, '');
+    let list = custStats().filter(c => !q || [c.name, c.username, c.phone, c.cid].join(' ').toLowerCase().replace(/[\s@+]/g, '').includes(q));
+    if (custSort === 'none') list = list.filter(c => !c.n);
+    list.sort((a, b) => custSort === 'last' ? b.last - a.last : b.sum - a.sum || b.last - a.last);
+    $('customers').innerHTML = list.length ? list.map(c => `<article class="cust">
+      <div class="nm">${esc(c.name || 'Mijoz')}${c.role ? `<span class="tag ${c.role === 'Optom' ? 'optom' : ''}">${esc(c.role)}</span>` : ''}</div>
+      <div class="sum">${c.n ? fmt(c.sum) : ''}</div>
+      <div class="sub">${c.n ? `${c.n} ta buyurtma, oxirgisi ${when(c.last)}` : 'Hali buyurtma bermagan'}${c.username ? ', @' + esc(c.username) : ''}</div><div></div>
+      ${contactsHTML(c.cid, c.phone, c.username)}
+    </article>`).join('') : `<div class="empty"><strong>Mijoz topilmadi</strong>Qidiruvni oʻzgartirib koʻring.</div>`;
+  }
+  $('cq').addEventListener('input', e => { cq = e.target.value; renderCustomers(); });
+  $('custSort').addEventListener('click', e => { const b = e.target.closest('[data-sort]'); if (!b) return; custSort = b.dataset.sort;
+    $('custSort').querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderCustomers(); });
+
+  /* ---- hisobot ---- */
+  function renderReport() {
+    const from = periodDays ? startOfDay(Date.now()) - (periodDays - 1) * DAY : 0;
+    const list = orders.filter(o => live(o) && (o.created || 0) >= from);
+    const sum = list.reduce((s, o) => s + orderSum(o), 0), qty = list.reduce((s, o) => s + orderQty(o), 0);
+    $('kSum').textContent = short(sum); $('kCount').textContent = list.length;
+    $('kAvg').textContent = list.length ? short(sum / list.length) : '0'; $('kQty').textContent = fmtN(qty);
+    const models = new Map();
+    list.forEach(o => (o.items || []).forEach(i => { const q = i.aq ?? i.oq; const m = models.get(i.n) || { q: 0, s: 0 }; m.q += q; m.s += q * i.p; models.set(i.n, m); }));
+    const top = [...models.entries()].sort((a, b) => b[1].q - a[1].q).slice(0, 10), maxQ = top.length ? top[0][1].q : 1;
+    $('topModels').innerHTML = top.length ? top.map(([n, m]) => `<div class="top-row"><span>${esc(n)}</span><b>${m.q} ta</b><span class="meter"><i style="width:${m.q / maxQ * 100}%"></i></span></div>`).join('') : '<p class="sub" style="color:var(--muted);font-size:13.5px">Bu davrda savdo yoʻq.</p>';
+    const opt = list.filter(o => o.pt === 'Optom').reduce((s, o) => s + orderSum(o), 0), ret = sum - opt;
+    $('split').innerHTML = sum ? `<i style="width:${opt / sum * 100}%"></i><i style="width:${ret / sum * 100}%"></i>` : '';
+    $('splitLegend').innerHTML = `<span><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--kapton)"></span> Optom: <b>${short(opt)}</b></span><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--mat)"></span> Chakana: <b>${short(ret)}</b></span>`;
+    const cs = new Map(); list.forEach(o => { const k = String(o.cid); const c = cs.get(k) || { name: nm(o), s: 0, n: 0 }; c.s += orderSum(o); c.n++; cs.set(k, c); });
+    const tc = [...cs.values()].sort((a, b) => b.s - a.s).slice(0, 5);
+    $('topCust').innerHTML = tc.length ? tc.map(c => `<div class="top-row"><span>${esc(c.name)} <span style="color:var(--muted)">(${c.n} ta)</span></span><b>${short(c.s)}</b></div>`).join('') : '<p style="color:var(--muted);font-size:13.5px">Bu davrda mijoz yoʻq.</p>';
+  }
+  $('periods').addEventListener('click', e => { const b = e.target.closest('[data-days]'); if (!b) return; periodDays = +b.dataset.days;
+    $('periods').querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderReport(); });
+
+  /* ---- CSV eksport ---- */
+  function download(name, rows) {
+    const csv = '\ufeff' + rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    if (tg && tg.platform && tg.platform !== 'unknown') toast('Telegram ichida yuklab olinmasa, panelni brauzerda oching');
+  }
+  const d8 = (t) => t ? new Date(t).toLocaleString('uz-UZ') : '';
+  $('expOrders').onclick = () => download('buyurtmalar.csv', [['ID', 'Sana', 'Holat', 'Mijoz', 'Username', 'Telefon', 'Yetkazish', 'Manzil', 'Narx turi', 'Soni', 'Summa', 'Tarkib', 'Izoh'],
+    ...orders.map(o => [o.id, d8(o.created), STATUSES[o.status] || o.status, nm(o), o.username ? '@' + o.username : '', phoneOf(o), o.deliv, o.addr, o.pt, orderQty(o), orderSum(o),
+      (o.items || []).map(i => `${i.n} x${i.aq ?? i.oq}`).join('; '), o.note])]);
+  $('expCust').onclick = () => download('mijozlar.csv', [['Ism', 'Username', 'Telefon', 'Rejim', 'Buyurtmalar', 'Jami xarid', 'Oxirgi buyurtma'],
+    ...custStats().map(c => [c.name, c.username ? '@' + c.username : '', c.phone, c.role, c.n, c.sum, d8(c.last)])]);
+
+
+  /* ===================== TOVARLAR: narx va qoldiq ===================== */
+  let catalog = null, edits = new Map(), pf = 'all', pBrand = 'Hammasi', pq = '', pLimit = 60;
+  const LOW = 5;
+  const val = (p, k) => (edits.has(p.id) && k in edits.get(p.id)) ? edits.get(p.id)[k] : p[k];
+  async function loadCatalog() {
+    $('products').innerHTML = '<div class="empty"><strong>Yuklanmoqda…</strong></div>';
+    try { const d = await api('catalog'); catalog = d.products || []; renderBrands(); renderProducts(); updateProdBadges(); }
+    catch (e) { if (e.message !== 'auth') $('products').innerHTML = `<div class="empty"><strong>Yuklab boʻlmadi</strong>${esc(e.message)}</div>`; }
+  }
+  function updateProdBadges() {
+    if (!catalog) return;
+    const out = catalog.filter(p => p.active !== false && +val(p, 'stock') <= 0).length;
+    const low = catalog.filter(p => p.active !== false && +val(p, 'stock') > 0 && +val(p, 'stock') <= LOW).length;
+    $('tProd').textContent = out || ''; $('tProd').style.color = out ? 'var(--danger)' : '';
+    $('pfAll').textContent = catalog.length; $('pfLow').textContent = low; $('pfOut').textContent = out;
+    $('pfHid').textContent = catalog.filter(p => val(p, 'active') === false).length; $('pfDirty').textContent = edits.size || '';
+  }
+  function renderBrands() {
+    const brands = [...new Set(catalog.map(p => p.brand))];
+    $('pBrands').innerHTML = ['Hammasi', ...brands].map(b => `<button class="chip" type="button" data-pb="${esc(b)}" aria-pressed="${b === pBrand}">${esc(b)}</button>`).join('');
+    $('brandList').innerHTML = brands.map(b => `<option value="${esc(b)}">`).join('');
+    $('typeList').innerHTML = [...new Set(catalog.map(p => p.type))].map(t => `<option value="${esc(t)}">`).join('');
+  }
+  function filteredProducts() {
+    const q = pq.trim().toLowerCase().replace(/[\s/]+/g, '');
+    return catalog.filter(p => {
+      const st = +val(p, 'stock'), hid = val(p, 'active') === false;
+      if (pf === 'low' && !(st > 0 && st <= LOW)) return false;
+      if (pf === 'out' && st > 0) return false;
+      if (pf === 'hidden' && !hid) return false;
+      if (pf === 'dirty' && !edits.has(p.id)) return false;
+      if (pBrand !== 'Hammasi' && p.brand !== pBrand) return false;
+      return !q || (p.id + ' ' + val(p, 'name')).toLowerCase().replace(/[\s/]+/g, '').includes(q);
+    });
+  }
+  function prodHTML(p) {
+    const st = +val(p, 'stock'), hid = val(p, 'active') === false;
+    return `<article class="prod${edits.has(p.id) ? ' dirty' : ''}${hid ? ' hidden-p' : ''} ${st <= 0 ? 'stock-0' : st <= LOW ? 'stock-low' : ''}" data-pid="${esc(p.id)}">
+      <div class="p-top"><div><div class="p-meta">${esc(p.brand)}, ${esc(p.type)}, ID ${esc(p.id)}${hid ? ', <b>yashirilgan</b>' : ''}</div>
+        <div class="p-name">${esc(val(p, 'name'))}</div></div>
+        <button class="eye" type="button" data-hide="${esc(p.id)}">${hid ? 'Koʻrsatish' : 'Yashirish'}</button></div>
+      <div class="p-fields">
+        <div><label>Narxi (Dona)</label><input type="number" inputmode="numeric" data-f="retail" value="${val(p, 'retail')}"></div>
+        <div><label>Qoldiq${st <= 0 ? ' (tugagan)' : ''}</label><div class="qty"><button type="button" data-step="-1" aria-label="Kamaytirish">−</button>
+          <input type="number" inputmode="numeric" data-f="stock" value="${st}" aria-label="Qoldiq"><button type="button" data-step="1" aria-label="Koʻpaytirish">+</button></div></div>
+      </div></article>`;
+  }
+  function renderProducts() {
+    if (!catalog) return;
+    const list = filteredProducts();
+    $('products').innerHTML = list.length ? list.slice(0, pLimit).map(prodHTML).join('')
+      : `<div class="empty"><strong>Model topilmadi</strong>Filtr yoki qidiruvni oʻzgartiring.</div>`;
+    $('pMore').hidden = list.length <= pLimit; $('pMore').textContent = `Yana koʻrsatish (${list.length - pLimit} ta)`;
+    $('bulkCount').textContent = list.length;
+  }
+  function setEdit(pid, k, v) {
+    const p = catalog.find(x => x.id === pid); if (!p) return;
+    const e = { ...(edits.get(pid) || {}) };
+    if (String(p[k]) === String(v)) delete e[k]; else e[k] = v;
+    Object.keys(e).length ? edits.set(pid, e) : edits.delete(pid);
+    const el = document.querySelector(`.prod[data-pid="${CSS.escape(pid)}"]`);
+    if (el) { el.classList.toggle('dirty', edits.has(pid)); const st = +val(p, 'stock');
+      el.classList.toggle('stock-0', st <= 0); el.classList.toggle('stock-low', st > 0 && st <= LOW); }
+    updateSaveBar(); updateProdBadges();
+  }
+  function updateSaveBar() {
+    const show = edits.size > 0 && !$('productsView').hidden;
+    $('saveBar').hidden = !show; $('saveTxt').textContent = `${edits.size} ta modelda oʻzgarish`;
+  }
+  $('products').addEventListener('input', e => {
+    const f = e.target.dataset.f; if (!f) return;
+    const pid = e.target.closest('.prod').dataset.pid;
+    const n = e.target.value === '' ? NaN : Math.round(+e.target.value);
+    e.target.classList.toggle('bad', !(n >= 0));
+    if (n >= 0) setEdit(pid, f, n);
+  });
+  $('products').addEventListener('click', e => {
+    const s = e.target.closest('[data-step]');
+    if (s) { const box = s.closest('.prod'), inp = box.querySelector('[data-f="stock"]');
+      const n = Math.max(0, (+inp.value || 0) + +s.dataset.step); inp.value = n; setEdit(box.dataset.pid, 'stock', n); return; }
+    const h = e.target.closest('[data-hide]');
+    if (h) { const p = catalog.find(x => x.id === h.dataset.hide); setEdit(p.id, 'active', val(p, 'active') === false);
+      const el = h.closest('.prod'); el.outerHTML = prodHTML(p); }
+  });
+  $('pq').addEventListener('input', e => { pq = e.target.value; pLimit = 60; renderProducts(); });
+  $('pFilter').addEventListener('click', e => { const b = e.target.closest('[data-pf]'); if (!b) return; pf = b.dataset.pf; pLimit = 60;
+    $('pFilter').querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderProducts(); });
+  $('pBrands').addEventListener('click', e => { const b = e.target.closest('[data-pb]'); if (!b) return; pBrand = b.dataset.pb; pLimit = 60;
+    $('pBrands').querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderProducts(); });
+  $('pMore').onclick = () => { pLimit += 100; renderProducts(); };
+  $('openBulk').onclick = () => { $('bulkBox').hidden = !$('bulkBox').hidden; $('newBox').hidden = true; };
+  $('openNew').onclick = () => { $('newBox').hidden = !$('newBox').hidden; $('bulkBox').hidden = true; };
+  $('bulkApply').onclick = () => {
+    const pct = parseFloat(String($('bulkPct').value).replace(',', '.'));
+    if (!pct || Math.abs(pct) > 90) { toast('Foizni kiriting, masalan 5 yoki -3'); return; }
+    const which = $('bulkWhich').value, list = filteredProducts();
+    const r = (v) => Math.max(0, Math.round(v * (1 + pct / 100) / 1000) * 1000);
+    list.forEach(p => { if (which !== 'wholesale') setEdit(p.id, 'retail', r(+val(p, 'retail'))); if (which !== 'retail') setEdit(p.id, 'wholesale', r(+val(p, 'wholesale'))); });
+    renderProducts(); toast(`${list.length} ta modelga ${pct > 0 ? '+' : ''}${pct}% qoʻllandi. Tekshirib, Saqlash ni bosing`);
+  };
+  $('nAdd').onclick = async () => {
+    const ch = { id: 'new', brand: $('nBrand').value.trim(), type: $('nType').value.trim(), name: $('nName').value.trim(),
+      retail: +$('nRetail').value, wholesale: +$('nRetail').value, stock: +$('nStock').value || 0, active: true };
+    if (!ch.brand || !ch.name || !ch.retail || !ch.wholesale) { toast('Brend, nom va ikkala narxni kiriting'); return; }
+    $('nAdd').disabled = true;
+    try { const d = await api('catalog_save', { changes: [ch] }); catalog = d.products.sort((a, b) => +a.id - +b.id);
+      ['nName', 'nRetail', 'nWhole', 'nStock'].forEach(id => $(id).value = ''); renderBrands(); renderProducts(); updateProdBadges(); toast('Model qoʻshildi, doʻkonda koʻrinadi'); }
+    catch (e) { if (e.message !== 'auth') toast(e.message); }
+    $('nAdd').disabled = false;
+  };
+  $('discard').onclick = () => { edits.clear(); renderProducts(); updateSaveBar(); updateProdBadges(); toast('Oʻzgarishlar bekor qilindi'); };
+  $('saveAll').onclick = async () => {
+    const changes = [...edits.entries()].map(([id, e]) => ({ id, ...e }));
+    
+    $('saveAll').disabled = true;
+    try { const d = await api('catalog_save', { changes }); catalog = d.products.sort((a, b) => +a.id - +b.id); edits.clear();
+      renderProducts(); updateSaveBar(); updateProdBadges(); toast(`${d.saved} ta model saqlandi. Doʻkonda darhol yangilanadi`); }
+    catch (e) { if (e.message !== 'auth') toast(e.message); }
+    $('saveAll').disabled = false;
+  };
+  window.addEventListener('beforeunload', e => { if (edits.size) { e.preventDefault(); e.returnValue = ''; } });
+
+  /* ---- tablar ---- */
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x === t)));
+    $('ordersView').hidden = t.dataset.tab !== 'orders'; $('customersView').hidden = t.dataset.tab !== 'customers'; $('reportView').hidden = t.dataset.tab !== 'report';
+    $('productsView').hidden = t.dataset.tab !== 'products';
+    if (t.dataset.tab === 'products' && !catalog) loadCatalog();
+    updateSaveBar();
+  });
+  $('refresh').onclick = () => load();
+  setInterval(() => { if (!document.hidden && !document.activeElement.matches('textarea, select, input')) load(true); }, 60000);
+  load();
+})();
+</script>
+</body>
+</html>
