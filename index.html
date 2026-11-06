@@ -17,6 +17,7 @@
       --success: #16a34a;
       --danger: #ef4444;
       --radius: 12px;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     }
     * {
       box-sizing: border-box;
@@ -736,7 +737,7 @@
       document.getElementById("btnDelivBts").classList.toggle("active", type === "BTS Pochta");
     }
 
-    function submitOrder() {
+    async function submitOrder() {
       const name = document.getElementById("cust-name")?.value.trim();
       const phone = document.getElementById("cust-phone")?.value.trim();
       const addr = document.getElementById("cust-addr")?.value.trim();
@@ -758,10 +759,24 @@
         return;
       }
 
+      const btn = document.querySelector(".btn-submit");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "⏳ Buyurtma yuborilmoqda...";
+      }
+
       const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
       const totalSum = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
 
+      const tgApp = window.Telegram?.WebApp;
+      const cid = tgApp?.initDataUnsafe?.user?.id || null;
+      const tgName = tgApp?.initDataUnsafe?.user?.first_name || name;
+      const tgUsername = tgApp?.initDataUnsafe?.user?.username || "";
+
       const orderPayload = {
+        cid: cid,
+        tg_name: tgName,
+        username: tgUsername,
         name: name,
         phone: phone,
         delivery: selectedDelivery,
@@ -771,16 +786,36 @@
         total_sum: totalSum
       };
 
-      const tgApp = window.Telegram?.WebApp;
-      if (tgApp && typeof tgApp.sendData === "function") {
-        try {
-          tgApp.sendData(JSON.stringify(orderPayload));
-          tgApp.close();
-        } catch (err) {
-          alert("Telegramga yuborishda xatolik: " + err.message);
+      try {
+        const response = await fetch("/api/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload)
+        });
+
+        const result = await response.json();
+
+        if (result.status === "ok") {
+          alert("✅ Buyurtmangiz qabul qilindi!");
+          cart = [];
+          updateCartUI();
+          closeCartModal();
+          if (tgApp && typeof tgApp.close === "function") {
+            tgApp.close();
+          }
+        } else {
+          alert("Xatolik: " + (result.message || "Buyurtma yuborilmadi"));
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "✅ Buyurtmani tasdiqlash";
+          }
         }
-      } else {
-        alert("Buyurtma faqat Telegram bot ichidagi Mini App orqali yuboriladi.");
+      } catch (err) {
+        alert("Tarmoq xatoligi: " + err.message);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "✅ Buyurtmani tasdiqlash";
+        }
       }
     }
   </script>
